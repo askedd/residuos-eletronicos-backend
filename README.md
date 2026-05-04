@@ -135,7 +135,7 @@ src/main/java/br/edu/ads/residuos/
 
 ---
 
-## 👩‍💻 Autora
+## 👩‍💻 Autor
 
-Desenvolvido por **Sandra** — Curso de ADS  
+Desenvolvido por **Luiz Dias** — Curso de ADS  
 Projeto Integrador: Mapeamento de Pontos de Descarte de Resíduos Eletrônicos
