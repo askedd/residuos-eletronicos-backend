@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pontos de Descarte E-lixo BH</title>
+    <link rel="stylesheet" href="STYLE.CSS">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <header class="header">
+            <h1><i class="fas fa-recycle"></i> E-lixo BH</h1>
+            <p>Encontre um ponto de coleta confiável para seu lixo eletrônico em Belo Horizonte.</p>
+            <div class="app-intro">
+                <p>Veja como funciona:</p>
+                <ul>
+                    <li>1. Use "Localizar-me Agora" para ver onde você está no mapa.</li>
+                    <li>2. Veja os pontos de coleta existentes e clique em qualquer um para centralizar no mapa.</li>
+                    <li>3. Adicione um novo ponto por CEP e exclua pontos se precisar atualizar a lista.</li>
+                </ul>
+            </div>
+        </header>
+
+        <main>
+            <!-- Botão para localização -->
+            <section id="location-section" class="location-section">
+                <button id="getLocationBtn" class="location-btn">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>Localizar-me Agora</span>
+                </button>
+                <div id="statusMessage" class="status-message"></div>
+            </section>
+
+            <!-- Mapa interativo -->
+            <section id="mapSection" class="map-section">
+                <div id="map" style="height: 400px; border-radius: 8px;"></div>
+            </section>
+
+            <!-- Lista de pontos de coleta -->
+            <section id="resultsSection" class="results-section">
+                <h2>Pontos de Coleta</h2>
+                <p class="section-description">Clique no nome para ver o ponto no mapa. Use "Excluir" se quiser remover um local antigo ou duplicado.</p>
+                <ul id="resultsList" class="results-list"></ul>
+            </section>
+
+            <!-- Botão e formulário para adicionar novos pontos -->
+            <section id="addPointSection" class="add-point-section">
+                <button id="addPointBtn" class="add-point-btn">Adicionar Novo Ponto</button>
+                <form id="addPointForm" class="add-point-form" style="display: none;">
+                    <input type="text" id="pointName" placeholder="Nome do ponto, ex: Escola X" required />
+                    <input type="text" id="pointCep" placeholder="CEP (somente números, ex: 30140071)" required />
+                    <button type="submit">Adicionar por CEP</button>
+                    <p class="note-text">Não sabe o CEP? Procure no Google o endereço do local e use o CEP correspondente.</p>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script principal -->
+    <script src="APP.JS"></script>
+</body>
+</html>
