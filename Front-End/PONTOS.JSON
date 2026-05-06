@@ -1,0 +1,50 @@
+[
+    {
+        "id": 1,
+        "nome": "Ponto de Entrega Voluntária - Savassi",
+        "endereco": "Praça da Savassi, Savassi, Belo Horizonte - MG",
+        "latitude": -19.9415,
+        "longitude": -43.9350,
+        "tipos": ["Baterias", "Celulares", "Lâmpadas", "Pilhas"]
+    },
+    {
+        "id": 2,
+        "nome": "Ecoponto Venda Nova",
+        "endereco": "R. Maria Borborema, 80 - Venda Nova, Belo Horizonte - MG",
+        "latitude": -19.9880,
+        "longitude": -43.9340,
+        "tipos": ["Eletrodomésticos", "Eletrônicos", "Pilhas"]
+    },
+    {
+        "id": 3,
+        "nome": "Ponto Comum BH - Centro",
+        "endereco": "Av. Amazonas, 2245 - Centro, Belo Horizonte - MG",
+        "latitude": -19.9180,
+        "longitude": -43.9370,
+        "tipos": ["Celulares", "Computadores", "Periféricos"]
+    },
+    {
+        "id": 4,
+        "nome": "Ecocentro Barreiro",
+        "endereco": "R. Padre João, 123 - Barreiro, Belo Horizonte - MG",
+        "latitude": -20.0280,
+        "longitude": -44.0090,
+        "tipos": ["Todos os tipos", "Eletroeletrônicos grandes"]
+    },
+    {
+        "id": 5,
+        "nome": "Ponto Verde - Pampulha",
+        "endereco": "Av. Antônio Carlos, 6627 - Pampulha, Belo Horizonte - MG",
+        "latitude": -19.8650,
+        "longitude": -43.9710,
+        "tipos": ["Baterias", "Celulares", "Lâmpadas"]
+    },
+    {
+        "id": 6,
+        "nome": "Recicla BH - Santa Efigênia",
+        "endereco": "R. Niquelina, 500 - Santa Efigênia, Belo Horizonte - MG",
+        "latitude": -19.9210,
+        "longitude": -43.9230,
+        "tipos": ["Computadores", "Periféricos", "Eletrônicos"]
+    }
+]
