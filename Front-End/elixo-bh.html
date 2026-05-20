@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-lixo BH — Pontos de Descarte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --verde: #1a7a4a;
+            --verde-claro: #2ea865;
+            --verde-neon: #4dff91;
+            --bg: #0d1f14;
+            --bg2: #132019;
+            --card: #1a2e20;
+            --borda: #2a4535;
+            --texto: #e8f5ee;
+            --texto2: #8fb89e;
+            --erro: #ff5252;
+            --azul: #3dd6f5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--texto);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: linear-gradient(160deg, #0d2b18 0%, #133322 100%);
+            border-bottom: 2px solid var(--borda);
+            padding: 36px 24px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 80% at 50% -20%, rgba(77,255,145,0.12), transparent);
+            pointer-events: none;
+        }
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--verde-neon);
+            text-shadow: 0 0 30px rgba(77,255,145,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 10px;
+        }
+        .header h1 i { font-size: 0.85em; }
+        .header .subtitulo {
+            color: var(--texto2);
+            font-size: 1rem;
+            max-width: 520px;
+            margin: 0 auto 20px;
+        }
+        .app-intro {
+            display: inline-block;
+            background: rgba(77,255,145,0.06);
+            border: 1px solid rgba(77,255,145,0.18);
+            border-radius: 12px;
+            padding: 16px 22px;
+            max-width: 640px;
+            text-align: left;
+        }
+        .app-intro p {
+            font-weight: 600;
+            color: var(--verde-neon);
+            margin-bottom: 10px;
+            font-size: 0.92rem;
+        }
+        .app-intro ul { list-style: none; }
+        .app-intro li {
+            padding: 4px 0 4px 22px;
+            position: relative;
+            color: var(--texto2);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .app-intro li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--verde-neon);
+            font-weight: 700;
+        }
+
+        /* ── NAVEGAÇÃO ── */
+        .nav-tabs {
+            display: flex;
+            background: var(--bg2);
+            border-bottom: 2px solid var(--borda);
+            overflow-x: auto;
+        }
+        .nav-tab {
+            padding: 14px 24px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--texto2);
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-tab:hover { color: var(--verde-neon); }
+        .nav-tab.ativo {
+            color: var(--verde-neon);
+            border-bottom-color: var(--verde-neon);
+            background: rgba(77,255,145,0.05);
+        }
+
+        /* ── PÁGINAS ── */
+        .pagina { display: none; padding: 28px 20px; max-width: 800px; margin: 0 auto; }
+        .pagina.ativa { display: block; }
+
+        /* ── PÁGINA: MAPA ── */
+        .location-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 28px 0;
+        }
+        .location-btn {
+            background: linear-gradient(135deg, var(--verde), var(--verde-claro));
+            color: #fff;
+            border: none;
+            padding: 14px 32px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.25s;
+            box-shadow: 0 6px 20px rgba(46,168,101,0.35);
+        }
+        .location-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(46,168,101,0.5);
+        }
+        .status-message {
+            font-size: 0.92rem;
+            font-weight: 500;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .status-success { background: rgba(77,255,145,0.1); color: var(--verde-neon); border: 1px solid rgba(77,255,145,0.25); }
+        .status-error   { background: rgba(255,82,82,0.1);  color: var(--erro);       border: 1px solid rgba(255,82,82,0.25);  }
+        .status-loading { background: rgba(61,214,245,0.1); color: var(--azul);       border: 1px solid rgba(61,214,245,0.25); }
+
+        .map-wrapper {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 2px solid var(--borda);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            display: none;
+        }
+        #map { width: 100%; height: 420px; }
+
+        /* ── LISTA DE PONTOS ── */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 14px;
+            padding: 22px;
+            margin-top: 22px;
+        }
+        .section-card h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            color: var(--verde-neon);
+            margin-bottom: 6px;
+        }
+        .section-description {
+            color: var(--texto2);
+            font-size: 0.88rem;
+            margin-bottom: 16px;
+        }
+        .results-list { list-style: none; }
+        .results-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: var(--bg2);
+            border: 1px solid var(--borda);
+            border-radius: 10px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .results-list li:hover { border-color: var(--verde); background: #19291e; }
+        .point-item {
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--texto);
+            flex: 1;
+        }
+        .point-item:hover { color: var(--verde-neon); }
+        .point-tipos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .tipo-badge {
+            background: rgba(77,255,145,0.1);
+            color: var(--verde-neon);
+            border: 1px solid rgba(77,255,145,0.2);
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .delete-point-btn {
+            background: rgba(255,82,82,0.15);
+            color: var(--erro);
+            border: 1px solid rgba(255,82,82,0.3);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .delete-point-btn:hover { background: rgba(255,82,82,0.3); }
+
+        /* ── ADICIONAR PONTO ── */
+        .add-toggle-btn {
+            width: 100%;
+            background: rgba(77,255,145,0.08);
+            color: var(--verde-neon);
+            border: 2px dashed rgba(77,255,145,0.3);
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .add-toggle-btn:hover { background: rgba(77,255,145,0.14); border-color: rgba(77,255,145,0.5); }
+        .add-point-form {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+            background: var(--bg2);
+            border: 1px solid var(--borda);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .add-point-form.aberto { display: flex; }
+        .add-point-form input {
+            background: var(--bg);
+            border: 1.5px solid var(--borda);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.93rem;
+            color: var(--texto);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .add-point-form input:focus { border-color: var(--verde); }
+        .add-point-form input::placeholder { color: var(--texto2); }
+        .add-point-form .btn-submit {
+            background: linear-gradient(135deg, var(--verde), var(--verde-claro));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .add-point-form .btn-submit:hover { opacity: 0.88; }
+        .note-text {
+            font-size: 0.82rem;
+            color: var(--texto2);
+            line-height: 1.5;
+        }
+
+        /* ── PÁGINA: SOBRE ── */
+        .sobre-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .sobre-card {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 14px;
+            padding: 22px;
+            text-align: center;
+        }
+        .sobre-card .icone {
+            width: 52px; height: 52px;
+            background: rgba(77,255,145,0.1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 1.4rem;
+            color: var(--verde-neon);
+        }
+        .sobre-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .sobre-card p  { font-size: 0.88rem; color: var(--texto2); line-height: 1.5; }
+
+        /* ── PÁGINA: CATEGORIAS ── */
+        .cat-lista { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .cat-item {
+            background: var(--card);
+            border: 1px solid var(--borda);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .cat-item .ico {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .cat-item h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+        .cat-item p  { font-size: 0.87rem; color: var(--texto2); line-height: 1.5; }
+
+        /* ── PAGE TITLE ── */
+        .page-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--verde-neon);
+            margin-bottom: 6px;
+        }
+        .page-sub { color: var(--texto2); font-size: 0.92rem; margin-bottom: 4px; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 28px;
+            color: var(--texto2);
+            font-size: 0.92rem;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--texto2);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--borda);
+            margin-top: 20px;
+        }
+
+        @media (max-width: 520px) {
+            .nav-tab { padding: 12px 16px; font-size: 0.82rem; }
+            .pagina { padding: 20px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1><i class="fas fa-recycle"></i> E-lixo BH</h1>
+    <p class="subtitulo">Encontre pontos de coleta confiáveis para seu lixo eletrônico em Belo Horizonte.</p>
+    <div class="app-intro">
+        <p>Como funciona:</p>
+        <ul>
+            <li>Use <strong>Localizar-me Agora</strong> para ver sua posição no mapa.</li>
+            <li>Clique em qualquer ponto da lista para centralizar o mapa nele.</li>
+            <li>Adicione novos pontos pelo CEP ou exclua pontos desatualizados.</li>
+        </ul>
+    </div>
+</header>
+
+<nav class="nav-tabs">
+    <button class="nav-tab ativo" data-pagina="mapa">
+        <i class="fas fa-map-marked-alt"></i> Mapa
+    </button>
+    <button class="nav-tab" data-pagina="pontos">
+        <i class="fas fa-list"></i> Pontos
+    </button>
+    <button class="nav-tab" data-pagina="categorias">
+        <i class="fas fa-tags"></i> Categorias
+    </button>
+    <button class="nav-tab" data-pagina="sobre">
+        <i class="fas fa-info-circle"></i> Sobre
+    </button>
+</nav>
+
+<!-- ======= PÁGINA: MAPA ======= -->
+<section class="pagina ativa" id="pagina-mapa">
+    <div class="location-section">
+        <button id="getLocationBtn" class="location-btn">
+            <i class="fas fa-location-arrow"></i>
+            <span>Localizar-me Agora</span>
+        </button>
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+
+    <div class="map-wrapper" id="mapWrapper">
+        <div id="map"></div>
+    </div>
+
+    <div class="section-card" id="resultsSection" style="display:none">
+        <h2>Pontos de Coleta</h2>
+        <p class="section-description">Clique no nome para centralizar no mapa. Use "Excluir" para remover locais desatualizados.</p>
+        <ul id="resultsList" class="results-list"></ul>
+    </div>
+
+    <div id="addPointSection" style="display:none">
+        <button id="addPointBtn" class="add-toggle-btn">
+            <i class="fas fa-plus"></i> Adicionar Novo Ponto
+        </button>
+        <div id="addPointForm" class="add-point-form">
+            <input type="text" id="pointName" placeholder="Nome do ponto, ex: Escola X" />
+            <input type="text" id="pointCep" placeholder="CEP (somente números, ex: 30140071)" />
+            <button type="button" id="btnSubmitPonto" class="btn-submit">Adicionar por CEP</button>
+            <p class="note-text">Não sabe o CEP? Busque o endereço no Google Maps e copie o CEP correspondente.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ======= PÁGINA: PONTOS ======= -->
+<section class="pagina" id="pagina-pontos">
+    <h1 class="page-title"><i class="fas fa-map-pin"></i> Todos os Pontos</h1>
+    <p class="page-sub">Lista completa dos pontos de coleta cadastrados.</p>
+    <div class="section-card">
+        <ul id="listaCompleta" class="results-list"></ul>
+    </div>
+</section>
+
+<!-- ======= PÁGINA: CATEGORIAS ======= -->
+<section class="pagina" id="pagina-categorias">
+    <h1 class="page-title"><i class="fas fa-tags"></i> O que pode ser descartado?</h1>
+    <p class="page-sub">Conheça os tipos de resíduos aceitos nos pontos de coleta.</p>
+    <div class="cat-lista">
+        <div class="cat-item">
+            <span class="ico">📱</span>
+            <div>
+                <h3>Celulares e Smartphones</h3>
+                <p>Aparelhos, carregadores, capas e acessórios eletrônicos de telefonia. Remova o chip e cartão de memória antes de descartar.</p>
+            </div>
+        </div>
+        <div class="cat-item">
+            <span class="ico">🔋</span>
+            <div>
+                <h3>Pilhas e Baterias</h3>
+                <p>Pilhas AA, AAA, 9V, baterias de notebook, tablets e veículos elétricos. Não jogue no lixo comum — são altamente poluentes.</p>
+            </div>
+        </div>
+        <div class="cat-item">
+            <span class="ico">💻</span>
+            <div>
+                <h3>Computadores e Periféricos</h3>
+                <p>Notebooks, desktops, monitores, teclados, mouses, impressoras e cabos. Apague seus dados antes de entregar.</p>
+            </div>
+        </div>
+        <div class="cat-item">
+            <span class="ico">📺</span>
+            <div>
+                <h3>Eletrodomésticos</h3>
+                <p>TVs, micro-ondas, liquidificadores e outros aparelhos. Os Ecopontos aceitam peças grandes; verifique o local antes de ir.</p>
+            </div>
+        </div>
+        <div class="cat-item">
+            <span class="ico">💡</span>
+            <div>
+                <h3>Lâmpadas</h3>
+                <p>Lâmpadas fluorescentes, de sódio e LED. Nunca as quebre — liberam mercúrio. Leve inteiras ao ponto de coleta.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ======= PÁGINA: SOBRE ======= -->
+<section class="pagina" id="pagina-sobre">
+    <h1 class="page-title"><i class="fas fa-leaf"></i> Sobre o E-lixo BH</h1>
+    <p class="page-sub">Iniciativa de conscientização sobre descarte correto de resíduos eletrônicos em Belo Horizonte.</p>
+    <div class="sobre-grid">
+        <div class="sobre-card">
+            <div class="icone"><i class="fas fa-recycle"></i></div>
+            <h3>Missão</h3>
+            <p>Facilitar o descarte consciente de eletrônicos, reduzindo o impacto ambiental dos resíduos tecnológicos em BH.</p>
+        </div>
+        <div class="sobre-card">
+            <div class="icone"><i class="fas fa-map-marker-alt"></i></div>
+            <h3>Pontos de Coleta</h3>
+            <p>Mapeamos ecopontos, PEVs e parceiros da SLU/BH que aceitam diferentes tipos de resíduos eletrônicos.</p>
+        </div>
+        <div class="sobre-card">
+            <div class="icone"><i class="fas fa-users"></i></div>
+            <h3>Comunidade</h3>
+            <p>Qualquer pessoa pode contribuir adicionando novos pontos de coleta e mantendo as informações atualizadas.</p>
+        </div>
+        <div class="sobre-card">
+            <div class="icone"><i class="fas fa-globe"></i></div>
+            <h3>Tecnologia</h3>
+            <p>Utilizamos OpenStreetMap (Leaflet), ViaCEP e Nominatim — todas soluções abertas e gratuitas.</p>
+        </div>
+    </div>
+    <div class="section-card" style="margin-top:24px">
+        <h2 style="margin-bottom:10px">Por que descartar corretamente?</h2>
+        <p class="page-sub" style="line-height:1.7">
+            O lixo eletrônico contém metais pesados como chumbo, mercúrio e cádmio que, quando descartados incorretamente, 
+            contaminam o solo e a água. Ao usar os pontos de coleta, você garante que esses materiais sejam reciclados ou 
+            tratados com segurança, protegendo o meio ambiente e a saúde pública de Belo Horizonte.
+        </p>
+    </div>
+</section>
+
+<footer>
+    <p>E-lixo BH &copy; 2026 — Dados: OpenStreetMap, ViaCEP · Desenvolvido para conscientização ambiental</p>
+</footer>
+
+<script>
+// ─── DADOS EMBUTIDOS (substitui o fetch de PONTOS.JSON) ───────────────────
+const PONTOS_INICIAIS = [
+    { id:1, nome:"Ponto de Entrega Voluntária - Savassi",  endereco:"Praça da Savassi, Savassi, Belo Horizonte - MG",         latitude:-19.9415, longitude:-43.9350, tipos:["Baterias","Celulares","Lâmpadas","Pilhas"] },
+    { id:2, nome:"Ecoponto Venda Nova",                    endereco:"R. Maria Borborema, 80 - Venda Nova, Belo Horizonte - MG",latitude:-19.9880, longitude:-43.9340, tipos:["Eletrodomésticos","Eletrônicos","Pilhas"] },
+    { id:3, nome:"Ponto Comum BH - Centro",                endereco:"Av. Amazonas, 2245 - Centro, Belo Horizonte - MG",        latitude:-19.9180, longitude:-43.9370, tipos:["Celulares","Computadores","Periféricos"] },
+    { id:4, nome:"Ecocentro Barreiro",                     endereco:"R. Padre João, 123 - Barreiro, Belo Horizonte - MG",      latitude:-20.0280, longitude:-44.0090, tipos:["Todos os tipos","Eletroeletrônicos grandes"] },
+    { id:5, nome:"Ponto Verde - Pampulha",                 endereco:"Av. Antônio Carlos, 6627 - Pampulha, Belo Horizonte - MG",latitude:-19.8650, longitude:-43.9710, tipos:["Baterias","Celulares","Lâmpadas"] },
+    { id:6, nome:"Recicla BH - Santa Efigênia",            endereco:"R. Niquelina, 500 - Santa Efigênia, Belo Horizonte - MG", latitude:-19.9210, longitude:-43.9230, tipos:["Computadores","Periféricos","Eletrônicos"] }
+];
+
+// ─── APLICAÇÃO ────────────────────────────────────────────────────────────
+class ELixoBH {
+    constructor() {
+        this.pontosColeta = JSON.parse(JSON.stringify(PONTOS_INICIAIS)); // cópia
+        this.mapa = null;
+        this.pointMarkerLayer = null;
+
+        this.els = {
+            getLocationBtn:  document.getElementById('getLocationBtn'),
+            statusMessage:   document.getElementById('statusMessage'),
+            mapWrapper:      document.getElementById('mapWrapper'),
+            resultsSection:  document.getElementById('resultsSection'),
+            addPointSection: document.getElementById('addPointSection'),
+            resultsList:     document.getElementById('resultsList'),
+            addPointBtn:     document.getElementById('addPointBtn'),
+            addPointForm:    document.getElementById('addPointForm'),
+            btnSubmit:       document.getElementById('btnSubmitPonto'),
+            pointName:       document.getElementById('pointName'),
+            pointCep:        document.getElementById('pointCep'),
+            listaCompleta:   document.getElementById('listaCompleta'),
+        };
+
+        this._eventos();
+        this._renderListaCompleta();
+    }
+
+    _eventos() {
+        this.els.getLocationBtn.addEventListener('click', () => this._obterLocalizacao());
+        this.els.addPointBtn.addEventListener('click', () => this._toggleForm());
+        this.els.btnSubmit.addEventListener('click', () => this._adicionarPonto());
+    }
+
+    // ── Geolocalização ──────────────────────────────────────────────────
+    _obterLocalizacao() {
+        if (!navigator.geolocation) {
+            this._status('Geolocalização não suportada pelo seu navegador.', 'error'); return;
+        }
+        this._status('Obtendo sua localização…', 'loading');
+        navigator.geolocation.getCurrentPosition(
+            pos => this._inicializarMapa(pos),
+            err => this._erroGeo(err)
+        );
+    }
+
+    _inicializarMapa(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        this.els.mapWrapper.style.display = 'block';
+
+        if (!this.mapa) {
+            this.mapa = L.map('map').setView([lat, lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(this.mapa);
+            this.pointMarkerLayer = L.layerGroup().addTo(this.mapa);
+        } else {
+            this.mapa.setView([lat, lng], 13);
+        }
+
+        this.mapa.invalidateSize();
+        L.marker([lat, lng]).addTo(this.mapa).bindPopup('<strong>Você está aqui!</strong>').openPopup();
+
+        this._mostrarPontosNoMapa();
+        this._renderLista();
+
+        this.els.resultsSection.style.display = 'block';
+        this.els.addPointSection.style.display = 'block';
+        this._status('Localização obtida! Veja os pontos abaixo.', 'success');
+    }
+
+    // ── Mapa ─────────────────────────────────────────────────────────────
+    _mostrarPontosNoMapa() {
+        if (!this.mapa || !this.pointMarkerLayer) return;
+        this.pointMarkerLayer.clearLayers();
+        this.pontosColeta.forEach(p => {
+            L.marker([p.latitude, p.longitude])
+             .addTo(this.pointMarkerLayer)
+             .bindPopup(`<strong>${p.nome}</strong><br>${p.endereco}`);
+        });
+    }
+
+    // ── Lista (aba Mapa) ──────────────────────────────────────────────────
+    _renderLista() {
+        this.els.resultsList.innerHTML = this.pontosColeta.map((p, i) => `
+            <li>
+                <div style="flex:1">
+                    <span class="point-item" data-index="${i}">${p.nome} — <small style="color:var(--texto2)">${p.endereco}</small></span>
+                    ${p.tipos ? `<div class="point-tipos">${p.tipos.map(t => `<span class="tipo-badge">${t}</span>`).join('')}</div>` : ''}
+                </div>
+                <button class="delete-point-btn" data-index="${i}"><i class="fas fa-trash-alt"></i> Excluir</button>
+            </li>`).join('');
+
+        this.els.resultsList.querySelectorAll('.point-item').forEach(el =>
+            el.addEventListener('click', e => this._centralizarNoPonto(+e.currentTarget.dataset.index)));
+
+        this.els.resultsList.querySelectorAll('.delete-point-btn').forEach(btn =>
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                this._excluirPonto(+e.currentTarget.dataset.index);
+            }));
+    }
+
+    // ── Lista completa (aba Pontos) ───────────────────────────────────────
+    _renderListaCompleta() {
+        const ul = this.els.listaCompleta;
+        if (!this.pontosColeta.length) {
+            ul.innerHTML = '<li class="empty-state">Nenhum ponto cadastrado.</li>'; return;
+        }
+        ul.innerHTML = this.pontosColeta.map(p => `
+            <li>
+                <div style="flex:1">
+                    <span style="font-weight:600">${p.nome}</span><br>
+                    <small style="color:var(--texto2)">${p.endereco}</small>
+                    ${p.tipos ? `<div class="point-tipos" style="margin-top:6px">${p.tipos.map(t=>`<span class="tipo-badge">${t}</span>`).join('')}</div>` : ''}
+                </div>
+            </li>`).join('');
+    }
+
+    // ── Ações ─────────────────────────────────────────────────────────────
+    _centralizarNoPonto(index) {
+        const p = this.pontosColeta[index];
+        if (!this.mapa || !p) return;
+        // Muda para a aba Mapa automaticamente
+        document.querySelector('[data-pagina="mapa"]').click();
+        setTimeout(() => {
+            this.mapa.setView([p.latitude, p.longitude], 15);
+            L.popup().setLatLng([p.latitude, p.longitude])
+             .setContent(`<strong>${p.nome}</strong><br>${p.endereco}`).openOn(this.mapa);
+        }, 100);
+    }
+
+    _excluirPonto(index) {
+        if (index < 0 || index >= this.pontosColeta.length) return;
+        const nome = this.pontosColeta.splice(index, 1)[0].nome;
+        this._renderLista();
+        this._renderListaCompleta();
+        this._mostrarPontosNoMapa();
+        this._status(`Ponto "${nome}" removido.`, 'success');
+    }
+
+    _toggleForm() {
+        this.els.addPointForm.classList.toggle('aberto');
+    }
+
+    async _adicionarPonto() {
+        const nome = this.els.pointName.value.trim();
+        const cep  = this.els.pointCep.value.trim().replace(/\D/g, '');
+
+        if (!nome || cep.length !== 8) {
+            alert('Informe um nome e um CEP válido de 8 dígitos.'); return;
+        }
+
+        this._status('Buscando endereço pelo CEP…', 'loading');
+        try {
+            const { endereco, latitude, longitude } = await this._buscarEnderecoPorCep(cep);
+            this.pontosColeta.push({ nome, endereco, cep, latitude, longitude, tipos:[] });
+
+            // Garante que o mapa existe
+            if (!this.mapa) {
+                this.els.mapWrapper.style.display = 'block';
+                this.mapa = L.map('map').setView([latitude, longitude], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(this.mapa);
+                this.pointMarkerLayer = L.layerGroup().addTo(this.mapa);
+                this.els.resultsSection.style.display = 'block';
+                this.els.addPointSection.style.display = 'block';
+            } else {
+                this.mapa.setView([latitude, longitude], 14);
+            }
+
+            this._mostrarPontosNoMapa();
+            this._renderLista();
+            this._renderListaCompleta();
+
+            this.els.pointName.value = '';
+            this.els.pointCep.value  = '';
+            this.els.addPointForm.classList.remove('aberto');
+            this._status('Ponto adicionado com sucesso!', 'success');
+        } catch (err) {
+            alert('Não foi possível localizar o CEP. Verifique e tente novamente.');
+            this._status('Erro ao localizar o CEP.', 'error');
+            console.error(err);
+        }
+    }
+
+    async _buscarEnderecoPorCep(cep) {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        if (!res.ok) throw new Error('Falha no ViaCEP');
+        const d = await res.json();
+        if (d.erro) throw new Error('CEP não encontrado');
+
+        const endereco = [d.logradouro, d.bairro, d.localidade, d.uf].filter(Boolean).join(', ') || `CEP ${cep}`;
+        const { latitude, longitude } = await this._geocodeEndereco(`${endereco}, Brasil`);
+        return { endereco, latitude, longitude };
+    }
+
+    async _geocodeEndereco(endereco) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1&countrycodes=br`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+        if (!res.ok) throw new Error('Falha no Nominatim');
+        const dados = await res.json();
+        if (!dados || !dados[0]) throw new Error('Endereço não encontrado');
+        return { latitude: parseFloat(dados[0].lat), longitude: parseFloat(dados[0].lon) };
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    _status(msg, tipo) {
+        const el = this.els.statusMessage;
+        el.textContent = msg;
+        el.className = `status-message${msg ? ' status-'+tipo : ''}`;
+    }
+
+    _erroGeo(error) {
+        const msgs = {
+            1: 'Permissão de geolocalização negada.',
+            2: 'Informações de localização indisponíveis.',
+            3: 'A solicitação de localização expirou.'
+        };
+        this._status(msgs[error.code] || 'Erro desconhecido ao obter localização.', 'error');
+    }
+}
+
+// ─── NAVEGAÇÃO ENTRE PÁGINAS ──────────────────────────────────────────────
+document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('ativo'));
+        document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
+        btn.classList.add('ativo');
+        document.getElementById('pagina-' + btn.dataset.pagina).classList.add('ativa');
+    });
+});
+
+// ─── INICIALIZA ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => { new ELixoBH(); });
+</script>
+</body>
+</html>
